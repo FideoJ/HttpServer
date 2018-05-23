@@ -1,4 +1,4 @@
 # HttpServer
 ## Introduction
-- Use 'Node-like' middleware pattern
+- Use 'Express-like' middleware pattern
 - A toy for fun
