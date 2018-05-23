@@ -8,8 +8,8 @@ struct Response {
   std::unordered_map<std::string, std::string> headers;
   std::string body;
   
-  void write(const string &data);
-  void end();
+  void Write(const string &data);
+  void End();
 };
 
 #endif
