@@ -44,19 +44,19 @@ void HttpServer::Run() {
     if (clientFd < 0)
       RUNTIME_ERROR
     // TODO: thread sync
-    std::thread worker(Serve, clientFd, _mwMgr);
+    std::thread worker(serve, clientFd, _mwMgr);
     worker.detach();
   }
 }
 
-void HttpServer::Serve(int clientFd, MiddlewareManager *mwMgr) {
+void HttpServer::serve(int clientFd, MiddlewareManager *mwMgr) {
     Request req;
-    BuildRequest(clientFd, req);
+    buildRequest(clientFd, req);
     Response res;
 
     mwMgr->Process(req, res);
 }
 
-void HttpServer::BuildRequest(int clientFd, Request &req) {
+void HttpServer::buildRequest(int clientFd, Request &req) {
 
 }

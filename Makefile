@@ -8,16 +8,16 @@ TARGET := $(BINDIR)/server
 SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-CFLAGS := -std=c++11 -lpthread
+CFLAGS := -std=c++11 -lpthread -g
 INC := -I include
 
 $(TARGET) : $(OBJECTS)
 	@mkdir -p $(BINDIR)
-	$(CC) $^ $(CFLAGS) -o $(TARGET)
+	$(CC) $^ -o $(TARGET) $(CFLAGS)
 
 $(BUILDDIR)/%.o : $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+	$(CC) $(INC) -c -o $@ $< $(CFLAGS)
 
 clean:
 	rm -rf $(BUILDDIR) $(TARGET)

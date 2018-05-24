@@ -12,8 +12,8 @@ public:
   void Run();
 
 private:
-  static void Serve(int clientFd, MiddlewareManager *mwMgr);
-  static void BuildRequest(int clientFd, Request &req);
+  static void serve(int clientFd, MiddlewareManager *mwMgr);
+  static void buildRequest(int clientFd, Request &req);
 
 private:
   MiddlewareManager *_mwMgr;
