@@ -1,4 +1,5 @@
 #include "MiddlewareManager.hpp"
+#include "Middleware.hpp"
 
 void MiddlewareManager::AddMiddleware(Middleware *middleware) {
   _middlewares.back()->_next = middleware;

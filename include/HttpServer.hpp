@@ -12,7 +12,11 @@ public:
   void Run();
 
 private:
-  MiddlewareManager _mwMgr;
+  static void Serve(int clientFd, MiddlewareManager *mwMgr);
+  static void BuildRequest(int clientFd, Request &req);
+
+private:
+  MiddlewareManager *_mwMgr;
   std::string _ip;
   int _port;
   int _backlog;
