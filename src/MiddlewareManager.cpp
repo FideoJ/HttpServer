@@ -2,7 +2,8 @@
 #include "Middleware.hpp"
 
 void MiddlewareManager::AddMiddleware(Middleware *middleware) {
-  _middlewares.back()->_next = middleware;
+  if (!_middlewares.empty())
+    _middlewares.back()->_next = middleware;
   _middlewares.push_back(middleware);
 }
 
