@@ -14,6 +14,7 @@ public:
 private:
   static void serve(int clientFd, MiddlewareManager *mwMgr);
   static void buildRequest(int clientFd, Request &req);
+  static int getLine(int clientFd, char *buf, int size);
 
 private:
   MiddlewareManager *_mwMgr;

@@ -1,5 +1,6 @@
 #include "HttpServer.hpp"
 #include "MiddlewareManager.hpp"
+#include "RequestParser.hpp"
 #include <arpa/inet.h>
 #include <cstring>
 #include <errno.h>
@@ -8,9 +9,10 @@
 #include <stdexcept>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <cctype>
 #define DEFAULT_PORT 3000
 #define DEFAULT_BACKLOG 128
-#define RUNTIME_ERROR throw std::runtime_error(strerror(errno));
+#define THROW_RUNTIME_ERROR throw std::runtime_error(strerror(errno));
 
 HttpServer::HttpServer(MiddlewareManager *mwMgr, const std::string &ip,
                        int port, int backlog)
@@ -22,7 +24,7 @@ HttpServer::HttpServer(MiddlewareManager *mwMgr, const std::string &ip,
 void HttpServer::Run() {
   _listenSock = socket(AF_INET, SOCK_STREAM, 0);
   if (_listenSock < 0)
-    RUNTIME_ERROR
+    THROW_RUNTIME_ERROR
 
   struct sockaddr_in addr;
   memset(&addr, 0, sizeof(addr));
@@ -31,10 +33,10 @@ void HttpServer::Run() {
   inet_pton(AF_INET, _ip.c_str(), &addr.sin_addr.s_addr);
 
   if (bind(_listenSock, (const sockaddr *)&addr, sizeof(addr)) < 0)
-    RUNTIME_ERROR
+    THROW_RUNTIME_ERROR
 
   if (listen(_listenSock, _backlog) < 0)
-    RUNTIME_ERROR
+    THROW_RUNTIME_ERROR
 
   int clientFd = -1;
   struct sockaddr_in clientAddr;
@@ -42,7 +44,7 @@ void HttpServer::Run() {
   while (1) {
     clientFd = accept(_listenSock, (sockaddr *)&clientAddr, &clientAddrLen);
     if (clientFd < 0)
-      RUNTIME_ERROR
+      THROW_RUNTIME_ERROR
     // TODO: thread sync
     std::thread worker(serve, clientFd, _mwMgr);
     worker.detach();
@@ -58,5 +60,5 @@ void HttpServer::serve(int clientFd, MiddlewareManager *mwMgr) {
 }
 
 void HttpServer::buildRequest(int clientFd, Request &req) {
-
+  RequestParser::BuildRequest(clientFd, req);
 }
