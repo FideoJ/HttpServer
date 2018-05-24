@@ -8,8 +8,12 @@ struct Response {
   std::unordered_map<std::string, std::string> headers;
   std::string body;
   
-  // void Write(const std::string &data);
-  // void End();
+  enum Status { OK, BAD_REQUEST, INTERNAL_ERROR };
+
+  void SetStatus(Status status);
+  void SetHeader(std::string key, std::string value);
+  void Write(const std::string &data);
+  void End();
 };
 
 #endif

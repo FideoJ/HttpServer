@@ -43,7 +43,7 @@ void HttpServer::Run() {
     clientFd = accept(_listenSock, (sockaddr *)&clientAddr, &clientAddrLen);
     if (clientFd < 0)
       RUNTIME_ERROR
-
+    // TODO: thread sync
     std::thread worker(Serve, clientFd, _mwMgr);
     worker.detach();
   }
@@ -57,6 +57,6 @@ void HttpServer::Serve(int clientFd, MiddlewareManager *mwMgr) {
     mwMgr->Process(req, res);
 }
 
-void HttpServer::MakeRequest(int clientFd, Request &req) {
+void HttpServer::BuildRequest(int clientFd, Request &req) {
 
 }

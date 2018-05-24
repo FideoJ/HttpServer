@@ -1,9 +1,8 @@
-# HttpServer
-## Introduction
-- Use 'Express-like' middleware pattern
-- A toy for fun
-## Example
-```
+#include "Middleware.hpp"
+#include "MiddlewareManager.hpp"
+#include "HttpServer.hpp"
+#include <iostream>
+
 class Echoer : public Middleware {
   void Process(const Request &req, Response &res) {
     Next(req, res);
@@ -40,4 +39,3 @@ int main() {
 
   return 0;
 }
-```
