@@ -6,29 +6,29 @@
 #define BUF_SIZE 1024
 
 int RequestParser::getLine(int clientFd, char *buf, int size) {
-  int i = 0;
-  char c = '\0';
-  int n;
+  int lineSize = 0;
+  char ch = '\0';
+  int nrecv;
 
-  while ((i < size - 1) && (c != '\n')) {
-    n = recv(clientFd, &c, 1, 0);
-    if (n > 0) {
-      if (c == '\r') {
-        n = recv(clientFd, &c, 1, MSG_PEEK);
-        if (n > 0 && c == '\n')
-          recv(clientFd, &c, 1, 0);
+  while ((lineSize < size - 1) && (ch != '\n')) {
+    nrecv = recv(clientFd, &ch, 1, 0);
+    if (nrecv > 0) {
+      if (ch == '\r') {
+        nrecv = recv(clientFd, &ch, 1, MSG_PEEK);
+        if (nrecv > 0 && ch == '\n')
+          recv(clientFd, &ch, 1, 0);
         else
-          c = '\n';
+          ch = '\n';
       }
-      buf[i] = c;
-      ++i;
+      buf[lineSize] = ch;
+      ++lineSize;
     } else {
-      c = '\n';
+      ch = '\n';
     }
   }
-  buf[i] = '\0';
+  buf[lineSize] = '\0';
 
-  return i;
+  return lineSize;
 }
 
 void RequestParser::BuildRequest(int clientFd, Request &req) {
