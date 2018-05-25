@@ -15,6 +15,14 @@ class Echoer : public Middleware {
 
 class Logger : public Middleware {
   void Process(const Request &req, Response &res) {
+    std::cout << req.method << " " << req.path << " " << req.version << std::endl;
+
+    std::cout << "QueryString:" << std::endl;
+    for (const auto &queryString : req.queryString) {
+      std::cout << "  " << queryString.first << "=" << queryString.second << std::endl;
+    }
+    std::cout << std::endl;
+
     std::cout << "Headers:" << std::endl;
     for (const auto &header : req.headers) {
       std::cout << "  " << header.first << ": " << header.second << std::endl;

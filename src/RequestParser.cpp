@@ -1,8 +1,9 @@
 #include "RequestParser.hpp"
 #include "Request.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <strings.h>
 #define BUF_SIZE 1024
-#define METHOD_LEN 16
-#define URL_LEN 1024
 
 int RequestParser::getLine(int clientFd, char *buf, int size) {
   int i = 0;
@@ -30,53 +31,74 @@ int RequestParser::getLine(int clientFd, char *buf, int size) {
   return i;
 }
 
-void RequestParser::buildRequest(int clientFd, Request &req) {
+void RequestParser::BuildRequest(int clientFd, Request &req) {
   char buf[BUF_SIZE];
-  int lineSize;
-  
-  char url[URL_LEN];
-  char *queryString = NULL;
   int cursor = 0;
 
-  lineSize = getLine(clientFd, buf, sizeof(buf));
-  req.method = getToken(buf, lineSize, cursor, req);
-  
-  // i = 0;
+  int lineSize = getLine(clientFd, buf, sizeof(buf));
 
+  std::string method = getToken(buf, lineSize, cursor);
+  parseMethod(method, req);
 
-  // i = 0;
-  // while (isspace(buf[j]) && (j < sizeof(buf)))
-  //   j++;
-  // while (!isspace(buf[j]) && (i < sizeof(url) - 1) && (j < sizeof(buf))) {
-  //   url[i] = buf[j];
-  //   i++;
-  //   j++;
-  // }
-  // url[i] = '\0';
+  std::string url = getToken(buf, lineSize, cursor);
+  parsePathAndQueryString(url, req);
 
-  // queryString = url;
-  // while ((*queryString != '?') && (*queryString != '\0'))
-  //   queryString++;
-  // if (*queryString == '?') {
-  //   *queryString = '\0';
-  //   queryString++;
-  // }
-  // // set path and queryString
-  // req.path = url;
-  // req.queryString = queryString;
-
+  std::string version = getToken(buf, lineSize, cursor);
+  parseVersion(version, req);
 }
 
 std::string RequestParser::getToken(const char *line, int lineSize, int &cursor) {
-  char token[METHOD_LEN];
-  int index;
+  char token[BUF_SIZE];
+  int index = 0;
 
-  while (!isspace(buf[cursor]) && index < sizeof(token) - 1 && cursor < lineSize) {
-    token[index] = buf[cursor];
+  while (isspace(line[cursor]) && cursor < lineSize)
+    ++cursor;
+  while (!isspace(line[cursor]) && index < sizeof(token) - 1 && cursor < lineSize) {
+    token[index] = line[cursor];
     ++index;
     ++cursor;
   }
-  // Not implemented: consider an incomplete token
+  // discard linefeed
+  if (token[index - 1] == '\n')
+    --index;
+  // Not implemented: consider a empty or incomplete token
   token[index] = '\0';
   return std::string(token);
+}
+
+void RequestParser::parseMethod(const std::string &method, Request &req) {
+  if (!strcasecmp(method.c_str(), "GET"))
+    req.method = Request::Method::GET;
+  else if (!strcasecmp(method.c_str(), "POST"))
+    req.method = Request::Method::POST;
+  else
+    req.method = Request::Method::NO_IMPL;
+}
+
+void RequestParser::parsePathAndQueryString(const std::string &url, Request &req) {
+  std::size_t qsDel = url.find_first_of('?');
+  if (qsDel == std::string::npos) {
+    req.path = url;
+  } else {
+    req.path = url.substr(0, qsDel);
+    // Not implemented: consider a stupidly invalid query string
+    std::size_t last = qsDel + 1;
+    std::size_t kvDel;
+    std::size_t pairDel = url.find_first_of('&', last);
+    while (pairDel != std::string::npos) {
+      kvDel = url.find_first_of('=', last);
+      if (kvDel != std::string::npos)
+        req.queryString[url.substr(last, kvDel - last)] = url.substr(kvDel + 1, pairDel - (kvDel + 1));
+      last = pairDel + 1;
+      pairDel = url.find_first_of('&', last);
+    }
+    kvDel = url.find_first_of('=', last);
+    if (kvDel != std::string::npos)
+      req.queryString[url.substr(last, kvDel - last)] = url.substr(kvDel + 1);
+  }
+}
+
+void RequestParser::parseVersion(const std::string &version, Request &req) {
+  std::size_t del = version.find_first_of('/');
+  req.version = version.substr(del + 1);
 }
