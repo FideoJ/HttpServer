@@ -6,8 +6,7 @@
 class Echoer : public Middleware {
   void Process(const Request &req, Response &res) {
     Next(req, res);
-    res.SetStatus(Response::Status::OK);
-    res.SetHeader("content-type", "text/html");
+    res.SetHeader("Content-Type", "text/plain");
     res.Write(req.body);
     res.End();
   }

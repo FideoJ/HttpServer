@@ -54,7 +54,7 @@ void HttpServer::Run() {
 void HttpServer::serve(int clientFd, MiddlewareManager *mwMgr) {
     Request req;
     buildRequest(clientFd, req);
-    Response res;
+    Response res(clientFd);
 
     mwMgr->Process(req, res);
 }

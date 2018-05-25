@@ -12,6 +12,5 @@ private:
   static std::string getToken(const char *line, int lineSize, int &cursor);
   static void parseMethod(const std::string &method, Request &req);
   static void parsePathAndQueryString(const std::string &url, Request &req);
-  static void parseVersion(const std::string &version, Request &req);
 };
 #endif

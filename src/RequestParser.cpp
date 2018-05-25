@@ -3,6 +3,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <strings.h>
+#include <errno.h>
+#include <stdexcept>
+#include <cstring>
+#define THROW_RUNTIME_ERROR throw std::runtime_error(strerror(errno));
 #define BUF_SIZE 1024
 
 int RequestParser::getLine(int clientFd, char *buf, int size) {
@@ -43,8 +47,7 @@ void RequestParser::BuildRequest(int clientFd, Request &req) {
   std::string url = getToken(buf, lineSize, cursor);
   parsePathAndQueryString(url, req);
 
-  std::string version = getToken(buf, lineSize, cursor);
-  parseVersion(version, req);
+  req.version = getToken(buf, lineSize, cursor);
 
   std::string key, value;
   lineSize = getLine(clientFd, buf, sizeof(buf));
@@ -67,6 +70,8 @@ void RequestParser::BuildRequest(int clientFd, Request &req) {
     int nrecv = recv(clientFd, bodyBuf, contentLength, 0);
     if (nrecv > 0)
       req.body.append(bodyBuf, contentLength);
+    else
+      THROW_RUNTIME_ERROR
     free(bodyBuf);
   }
 }
@@ -120,9 +125,4 @@ void RequestParser::parsePathAndQueryString(const std::string &url, Request &req
     if (kvDel != std::string::npos)
       req.queryString[url.substr(last, kvDel - last)] = url.substr(kvDel + 1);
   }
-}
-
-void RequestParser::parseVersion(const std::string &version, Request &req) {
-  std::size_t del = version.find_first_of('/');
-  req.version = version.substr(del + 1);
 }
