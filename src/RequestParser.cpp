@@ -45,6 +45,30 @@ void RequestParser::BuildRequest(int clientFd, Request &req) {
 
   std::string version = getToken(buf, lineSize, cursor);
   parseVersion(version, req);
+
+  std::string key, value;
+  lineSize = getLine(clientFd, buf, sizeof(buf));
+  cursor = 0;
+  while (lineSize > 0 && buf[0] != '\n') {
+    key = getToken(buf, lineSize, cursor);
+    value = getToken(buf, lineSize, cursor);
+    req.headers[key.substr(0, key.size() - 1)] = value;
+    lineSize = getLine(clientFd, buf, sizeof(buf));
+    cursor = 0;
+  }
+  
+  int contentLength = 0;
+  if (req.headers.find("Content-Length") != req.headers.end())
+    contentLength = std::stoi(req.headers["Content-Length"]);
+  req.contentLength = contentLength;
+
+  if (contentLength > 0) {
+    char *bodyBuf = (char *)malloc(sizeof(char) * contentLength);
+    int nrecv = recv(clientFd, bodyBuf, contentLength, 0);
+    if (nrecv > 0)
+      req.body.append(bodyBuf, contentLength);
+    free(bodyBuf);
+  }
 }
 
 std::string RequestParser::getToken(const char *line, int lineSize, int &cursor) {

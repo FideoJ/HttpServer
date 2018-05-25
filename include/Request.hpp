@@ -10,6 +10,7 @@ struct Request {
   std::unordered_map<std::string, std::string> queryString;
   std::string version;
   std::unordered_map<std::string, std::string> headers;
+  int contentLength;
   std::string body;
 };
 

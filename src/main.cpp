@@ -29,7 +29,7 @@ class Logger : public Middleware {
     }
     std::cout << std::endl;
 
-    std::cout << "Body:" << std::endl;
+    std::cout << "Body(" << req.contentLength << "):" << std::endl;
     std::cout << "  " << req.body << std::endl;
     Next(req, res);
   }
@@ -42,7 +42,7 @@ int main() {
   mwMgr.AddMiddleware(&logger);
   mwMgr.AddMiddleware(&echoer);
 
-  HttpServer server(&mwMgr);
+  HttpServer server(&mwMgr, "0.0.0.0", 3000);
   server.Run();
 
   return 0;
