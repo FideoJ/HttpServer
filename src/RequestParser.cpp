@@ -90,7 +90,7 @@ std::string RequestParser::getToken(const char *line, int lineSize, int &cursor)
   // discard linefeed
   if (token[index - 1] == '\n')
     --index;
-  // Not implemented: consider a empty or incomplete token
+  // unimplemented: detect an empty or incomplete token
   token[index] = '\0';
   return std::string(token);
 }
@@ -110,7 +110,7 @@ void RequestParser::parsePathAndQueryString(const std::string &url, Request &req
     req.path = url;
   } else {
     req.path = url.substr(0, qsDel);
-    // Not implemented: consider a stupidly invalid query string
+    // unimplemented: detect a stupidly invalid query string
     std::size_t last = qsDel + 1;
     std::size_t kvDel;
     std::size_t pairDel = url.find_first_of('&', last);

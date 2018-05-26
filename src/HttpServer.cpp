@@ -45,7 +45,7 @@ void HttpServer::Run() {
     clientFd = accept(_listenSock, (sockaddr *)&clientAddr, &clientAddrLen);
     if (clientFd < 0)
       THROW_RUNTIME_ERROR
-    // TODO: thread sync
+    // unimplemented: thread i/o lock
     std::thread worker(serve, clientFd, _mwMgr);
     worker.detach();
   }

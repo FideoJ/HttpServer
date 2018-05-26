@@ -41,6 +41,7 @@ void Response::WriteHeaders() {
   int nsend = send(_clientFd, headers.c_str(), headers.size(), 0);
   if (nsend < 0)
     THROW_RUNTIME_ERROR
+  _headerSent = true;
 }
 
 void Response::writeStatus(std::stringstream &stream) {

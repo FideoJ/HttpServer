@@ -8,8 +8,9 @@ class Echoer : public Middleware {
   void Process(const Request &req, Response &res) {
     Next(req, res);
     res.SetHeader("Content-Type", "text/plain");
-    res.Write(req.body);
-    res.End();
+    res.Write(req.version);
+    res.Write(req.path);
+    res.End(req.body);
   }
 };
 
@@ -35,14 +36,15 @@ class Logger : public Middleware {
   }
 };
 
-int main() {
+int main(int argc, char *argv[]) {
   MiddlewareManager mwMgr;
   Echoer echoer;
   Logger logger;
   mwMgr.AddMiddleware(&logger);
   mwMgr.AddMiddleware(&echoer);
 
-  HttpServer server(&mwMgr, "0.0.0.0", 3000);
+  int port = argc > 1 ? std::stoi(argv[1]) : DEFAULT_PORT;
+  HttpServer server(&mwMgr, "0.0.0.0", port);
   server.Run();
 
   return 0;
