@@ -7,13 +7,13 @@ public:
   enum Status { OK, BAD_REQUEST, INTERNAL_ERROR };
 
   Response(int clientFd);
-  void SetVersion(std::string version);
-  void SetStatus(Status status);
-  void SetHeader(std::string key, std::string value);
-  void WriteHeaders();
-  void Write(const std::string &data);
-  void End(const std::string &data);
-  void End();
+  bool SetVersion(std::string version);
+  bool SetStatus(Status status);
+  bool SetHeader(std::string key, std::string value);
+  bool WriteHeaders();
+  bool Write(const std::string &data);
+  bool End(const std::string &data);
+  bool End();
 
 private:
   void writeStatus(std::stringstream &stream);
@@ -22,7 +22,7 @@ private:
   Status _status;
   std::unordered_map<std::string, std::string> _headers;
   std::string _body;
-  bool _headerSent;
+  bool _headerSent, _end;
   int _clientFd;
 };
 

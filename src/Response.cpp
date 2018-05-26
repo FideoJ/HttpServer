@@ -11,23 +11,32 @@
 #define DEFAULT_STATUS Response::Status::OK
 
 Response::Response(int clientFd) : _clientFd(clientFd), _headerSent(false),
-                                   _version(DEFAULT_VERSION), _status(DEFAULT_STATUS) {}
+                                   _version(DEFAULT_VERSION), _status(DEFAULT_STATUS), _end(false) {}
 
-void Response::SetVersion(std::string version) {
-  _version = version;
-}
-
-void Response::SetStatus(Response::Status status) {
-  _status = status;
-}
-
-void Response::SetHeader(std::string key, std::string value) {
-  _headers[key] = value;
-}
-
-void Response::WriteHeaders() {
+bool Response::SetVersion(std::string version) {
   if (_headerSent)
-    return;
+    return false;
+  _version = version;
+  return true;
+}
+
+bool Response::SetStatus(Response::Status status) {
+  if (_headerSent)
+    return false;
+  _status = status;
+  return true;
+}
+
+bool Response::SetHeader(std::string key, std::string value) {
+  if (_headerSent)
+    return false;
+  _headers[key] = value;
+  return true;
+}
+
+bool Response::WriteHeaders() {
+  if (_headerSent)
+    return false;
   std::stringstream stream;
   stream << _version << " ";
   writeStatus(stream);
@@ -42,6 +51,7 @@ void Response::WriteHeaders() {
   if (nsend < 0)
     THROW_RUNTIME_ERROR
   _headerSent = true;
+  return true;
 }
 
 void Response::writeStatus(std::stringstream &stream) {
@@ -60,31 +70,46 @@ void Response::writeStatus(std::stringstream &stream) {
   }
 }
 
-void Response::Write(const std::string &data) {
+bool Response::Write(const std::string &data) {
+  if (_end)
+    return false;
+
   if (!_headerSent)
     WriteHeaders();
-
   int nsend = send(_clientFd, data.c_str(), data.size(), 0);
   if (nsend < 0)
     THROW_RUNTIME_ERROR
+  return true;
 }
 
-void Response::End(const std::string &data) {
+bool Response::End(const std::string &data) {
+  if (_end)
+    return false;
+
   int nsend;
   if (_headerSent) {
     nsend = send(_clientFd, data.c_str(), data.size(), 0);
     if (nsend < 0)
       THROW_RUNTIME_ERROR
-    close(_clientFd);
+    if (close(_clientFd) < 0)
+      THROW_RUNTIME_ERROR
   } else {
+    // keep alive
     SetHeader("Content-Length", std::to_string(data.size()));
     WriteHeaders();
     nsend = send(_clientFd, data.c_str(), data.size(), 0);
     if (nsend < 0)
       THROW_RUNTIME_ERROR
   }
+  _end = true;
+  return true;
 }
 
-void Response::End() {
-  close(_clientFd);
+bool Response::End() {
+  if (_end)
+    return false;
+
+  if (close(_clientFd) < 0)
+    THROW_RUNTIME_ERROR
+  _end = true;
 }
