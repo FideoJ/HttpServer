@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <cctype>
+#include <unistd.h>
 #define DEFAULT_PORT 3000
 #define DEFAULT_BACKLOG 128
 #define THROW_RUNTIME_ERROR throw std::runtime_error(strerror(errno));
@@ -52,11 +53,21 @@ void HttpServer::Run() {
 }
 
 void HttpServer::serve(int clientFd, MiddlewareManager *mwMgr) {
+  char ch;
+  int nrecv;
+  while ((nrecv = recv(clientFd, &ch, 1, MSG_PEEK)) >= 0) {
+    // client close connecttion
+    if (nrecv == 0) {
+      close(clientFd);
+      break;
+    }
+
     Request req;
     buildRequest(clientFd, req);
     Response res(clientFd);
 
     mwMgr->Process(req, res);
+  }
 }
 
 void HttpServer::buildRequest(int clientFd, Request &req) {
