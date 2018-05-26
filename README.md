@@ -1,6 +1,7 @@
 # HttpServer
 ## Introduction
-- Use 'Express-like' middleware pattern
+- Use "Express-like" middleware pattern
+- Support "Transfer-Encoding: chunked"
 - A toy for fun
 ## Example
 ```
