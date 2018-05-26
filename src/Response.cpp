@@ -94,7 +94,7 @@ bool Response::End(const std::string &data) {
     if (close(_clientFd) < 0)
       THROW_RUNTIME_ERROR
   } else {
-    // keep alive
+    // persistent connection
     SetHeader("Content-Length", std::to_string(data.size()));
     WriteHeaders();
     nsend = send(_clientFd, data.c_str(), data.size(), 0);
