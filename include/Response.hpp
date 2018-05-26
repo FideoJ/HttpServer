@@ -1,9 +1,9 @@
 #ifndef RESPONSE_HPP_
 #define RESPONSE_HPP_
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 class Response {
-public:
+ public:
   enum Status { OK, BAD_REQUEST, INTERNAL_ERROR };
 
   Response(int clientFd);
@@ -15,14 +15,18 @@ public:
   bool End(const std::string &data);
   bool End();
 
-private:
+ private:
   void writeStatus(std::stringstream &stream);
+  void normalWrite(const std::string &data);
+  void normalEnd();
+  void chunkedWrite(const std::string &data);
+  void chunkedEnd();
 
   std::string _version;
   Status _status;
   std::unordered_map<std::string, std::string> _headers;
   std::string _body;
-  bool _headerSent, _end;
+  bool _headerSent, _end, _chunked;
   int _clientFd;
 };
 

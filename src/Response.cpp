@@ -1,22 +1,36 @@
 #include "Response.hpp"
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <errno.h>
-#include <stdexcept>
 #include <cstring>
+#include <errno.h>
+#include <iomanip>
 #include <sstream>
+#include <stdexcept>
+#include <strings.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 #define THROW_RUNTIME_ERROR throw std::runtime_error(strerror(errno));
 #define DEFAULT_VERSION "HTTP/1.1"
+#define CHUNKED_OPTION true
 #define DEFAULT_STATUS Response::Status::OK
 
-Response::Response(int clientFd) : _clientFd(clientFd), _headerSent(false),
-                                   _version(DEFAULT_VERSION), _status(DEFAULT_STATUS), _end(false) {}
+Response::Response(int clientFd)
+    : _clientFd(clientFd), _headerSent(false), _version(DEFAULT_VERSION),
+      _status(DEFAULT_STATUS), _end(false), _chunked(CHUNKED_OPTION) {
+  if (_chunked)
+    SetHeader("Transfer-Encoding", "chunked");
+}
 
 bool Response::SetVersion(std::string version) {
   if (_headerSent)
     return false;
   _version = version;
+
+  // version before HTTP/1.1 does not support "Transfer-Encoding: chunked"
+  if (!strcasecmp(_version.c_str(), "HTTP/0.9") ||
+      !strcasecmp(_version.c_str(), "HTTP/1.0")) {
+    _chunked = false;
+    _headers.erase("Transfer-Encoding");
+  }
   return true;
 }
 
@@ -73,12 +87,18 @@ void Response::writeStatus(std::stringstream &stream) {
 bool Response::Write(const std::string &data) {
   if (_end)
     return false;
+  if (data.empty())
+    return true;
 
   if (!_headerSent)
     WriteHeaders();
-  int nsend = send(_clientFd, data.c_str(), data.size(), 0);
-  if (nsend < 0)
-    THROW_RUNTIME_ERROR
+
+  // use "Transfer-Encoding: chunked"
+  if (_chunked) {
+    chunkedWrite(data);
+  } else {
+    normalWrite(data);
+  }
   return true;
 }
 
@@ -86,20 +106,21 @@ bool Response::End(const std::string &data) {
   if (_end)
     return false;
 
-  int nsend;
-  if (_headerSent) {
-    nsend = send(_clientFd, data.c_str(), data.size(), 0);
-    if (nsend < 0)
-      THROW_RUNTIME_ERROR
-    if (close(_clientFd) < 0)
-      THROW_RUNTIME_ERROR
+  // use "Transfer-Encoding: chunked"
+  if (_chunked) {
+    chunkedWrite(data);
+    chunkedEnd();
   } else {
-    // persistent connection
-    SetHeader("Content-Length", std::to_string(data.size()));
-    WriteHeaders();
-    nsend = send(_clientFd, data.c_str(), data.size(), 0);
-    if (nsend < 0)
-      THROW_RUNTIME_ERROR
+    // use Content-Length
+    if (!_headerSent) {
+      SetHeader("Content-Length", std::to_string(data.size()));
+      WriteHeaders();
+      normalWrite(data);
+    } else {
+      // use FIN
+      normalWrite(data);
+      normalEnd();
+    }
   }
   _end = true;
   return true;
@@ -109,7 +130,36 @@ bool Response::End() {
   if (_end)
     return false;
 
+  if (_chunked)
+    chunkedEnd();
+  else
+    normalEnd();
+  _end = true;
+  return true;
+}
+
+void Response::normalWrite(const std::string &data) {
+  int nsend = send(_clientFd, data.c_str(), data.size(), 0);
+  if (nsend < 0)
+    THROW_RUNTIME_ERROR
+}
+
+void Response::normalEnd() {
   if (close(_clientFd) < 0)
     THROW_RUNTIME_ERROR
-  _end = true;
+}
+
+void Response::chunkedWrite(const std::string &data) {
+  std::stringstream stream;
+  stream << std::hex << data.size() << "\r\n";
+  stream << data << "\r\n";
+  int nsend = send(_clientFd, stream.str().c_str(), stream.str().size(), 0);
+  if (nsend < 0)
+    THROW_RUNTIME_ERROR
+}
+
+void Response::chunkedEnd() {
+  int nsend = send(_clientFd, "0\r\n\r\n", 5, 0);
+  if (nsend < 0)
+    THROW_RUNTIME_ERROR
 }
