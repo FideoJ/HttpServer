@@ -7,6 +7,9 @@ class Middleware {
 public:
   Middleware();
   virtual void Process(const Request &req, Response &res);
+  virtual ~Middleware() {}
+
+protected:
   void Next(const Request &req, Response &res);
 
 private:
